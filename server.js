@@ -9,7 +9,7 @@ const app = express();
 const port = 3000;
 
 //Middleware to parse XML requests
-app.use(bodyParser.text({ type: 'text/xml' }));
+app.use(bodyParser.text({ type: 'text/xml',limit: '10mb' }));
 app.use(express.json());
 //Connecting Databse
 connectDB();

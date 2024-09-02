@@ -10,9 +10,9 @@ const apiUrl = 'https://vpun5qki39.execute-api.eu-north-1.amazonaws.com/prod/qui
  const sendDataToLambda = async (QBData,password) => {
     const parsedData = {};
 // Normalize and extract Customer Data
-if (QBData.CustomerQueryRs.CustomerRet) {
+if (QBData.CustomerQueryRs[0]) {
   let DBdata=null;
-  const custumerData =QBData.CustomerQueryRs.CustomerRet
+  const custumerData =QBData.CustomerQueryRs[0].CustomerRet
     console.log('Generating the Custumer Document and Sending It to DB and AWS');
     if(Array.isArray(custumerData)){
           const data = Object.assign({}, custumerData.map(item => item))
@@ -40,13 +40,13 @@ if (QBData.CustomerQueryRs.CustomerRet) {
 if (QBData.InvoiceQueryRs) {
     console.log('Parsing the Invoice Data');
   // Assuming there would be similar objects for invoices if they existed
-  parsedData.invoices = qbResponse.InvoiceQueryRs; // Replace with actual invoice parsing logic
+  parsedData.invoices = QBData.InvoiceQueryRs; // Replace with actual invoice parsing logic
 }
 
 // Normalize and extract Inventory Data
 if (QBData.ItemQueryRs) {
     console.log('Parsing the ItemInventory Data');
-  const inventoryItems = qbResponse.ItemInventoryQueryRs;
+  const inventoryItems = QBData.ItemQueryRs.ItemServiceRet;
   parsedData.inventoryItems = Array.isArray(inventoryItems) ? inventoryItems : [inventoryItems];
   parsedData.inventoryItems = parsedData.inventoryItems.map(item => ({
     id: item.ListID,
@@ -82,14 +82,14 @@ if (QBData.invoices && QBData.invoices.length > 0) {
 }
 
 // Check if inventory data exists and send to the /inventory route
-if (QBData.inventoryItems && QBData.inventoryItems.length > 0) {
+if (parsedData.inventoryItems && parsedData.inventoryItems.length > 0) {
     try {
     
         console.log('Sending Inventory Data',parsedData.inventoryItems);
-        const response = await axios.post(`${apiUrl}/inventory`,parsedData.inventoryItems);
+        const response = await axios.post(`${apiUrl}/Inventory`,parsedData.inventoryItems);
         console.log('Response from Lambda (Inventory):', response.data);
     } catch (error) {
-        console.error('Error sending inventory data to Lambda:');
+        console.error('Error sending inventory data to Lambda:',error);
     }
 }
 };

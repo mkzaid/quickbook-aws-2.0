@@ -4,6 +4,8 @@
 // the rest of the querries will also not work. 
 //Function To Generate TimeStamps For The Querries
 
+import { AllCustumersQuerryGenerator } from "./AllCustumers.js";
+
 function getISODate(minutesAgo) {
     const date = new Date();
     date.setMinutes(date.getMinutes() - minutesAgo);
@@ -26,11 +28,11 @@ function getISODate(minutesAgo) {
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${tzSign}${tzHours}:${tzMinutes}`;
 }
 
-const MinutesAgo = getISODate(2880);
+const MinutesAgo = getISODate(1580);
 const now = getISODate(0);
 //Querry Generator for fetching all the modified or creation Details
 const GeneralQuerryGenerator = ()=>{   
-      return `<CustomerQueryRq>
+    let xmlQuerry =`<CustomerQueryRq>
         <FromModifiedDate>${MinutesAgo}</FromModifiedDate>
         <ToModifiedDate>${now}</ToModifiedDate>
         </CustomerQueryRq>
@@ -55,6 +57,8 @@ const GeneralQuerryGenerator = ()=>{
         <ToModifiedDate>${now}</ToModifiedDate>
         </ItemInventoryQueryRq>
         `
+         xmlQuerry+=AllCustumersQuerryGenerator()
+        return xmlQuerry
 }
 
 export {

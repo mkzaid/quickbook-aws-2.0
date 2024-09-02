@@ -3,14 +3,18 @@ import xml2js from "xml2js"
 import {XMLParser} from "fast-xml-parser"
 import {sendDataToLambda} from "../utils/lambda.js"
 import {querryGenerator} from "../utils/querry.js"
-import {addCustumer} from "../utils/addQuerry.js"
-
-import {awsdata, custumQuerry , custumQuerryFlag, isQuerryUpdated} from "../controllers/awsdata.controllers.js"
+import { processCustomerData } from "../utils/DeleteCustumerCheckingAndUpdation.js"
+import {awsdata, custumQuerry , isQuerryUpdated} from "../controllers/awsdata.controllers.js"
 import { sendDataToDB } from "../db/sendData.js"
+import { GeneralQuerryGenerator } from "../Querries/GeneralQuerry.js"
 const parser = new xml2js.Parser({ explicitArray: false });
 let sessionTicket = null;
 let password=null
 let DBdata = {}
+let AWSQuerryFlag ;
+const isAWSResquestAvailable =(flag)=>{
+    AWSQuerryFlag = flag
+}
 
 const sendRequestsToQuickBook =(req, res) => {
     const xmlRequest = req.body;
@@ -74,10 +78,10 @@ const sendRequestsToQuickBook =(req, res) => {
         if (ticket === sessionTicket) {
             
                let querry =``
-               if(custumQuerryFlag){
+               if(AWSQuerryFlag){
                 querry=custumQuerry
                }else{
-                querry= querryGenerator()
+                querry= GeneralQuerryGenerator()
                }
             const responseXmlFormatted = `<?xml version="1.0" encoding="utf-8"?><soap:Envelope  xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
             <soap:Body>
@@ -107,7 +111,8 @@ const sendRequestsToQuickBook =(req, res) => {
     // Handle the receiveResponseXML request for the actual response data
     else if (xmlRequest.includes('<receiveResponseXML')) {
         console.log('Handling receiveResponseXML block');
-            isQuerryUpdated(true)
+            AWSQuerryFlag= false
+            // isQuerryUpdated(true)
           parser.parseString(xmlRequest, (err, result) => {
             if (err) {
               console.error("Error parsing SOAP response:", err);
@@ -122,12 +127,17 @@ const sendRequestsToQuickBook =(req, res) => {
             // Step 2: Parse the embedded QBXML
             const qbxmlParser = new XMLParser();
             const qbxmlResult = qbxmlParser.parse(unescapedXML);
-            console.log(qbxmlResult?.QBXML?.QBXMLMsgsRs);
+            // console.log(qbxmlResult?.QBXML?.QBXMLMsgsRs);
             //We will check for QBXMLMsgs for three things Custumer , Invoice , Inventory
             //After that we will add the relevent dat in the DB dat with a type define either it is custumer or Invoice or Inventory
             //Based on the type we will hit AWS endpoints and send only relevent type data with doc id and password to that endpoint
             // const recievedData = qbxmlResult?.QBXML?.QBXMLMsgsRs.CustomerQueryRs.CustomerRet
         const recievedData = qbxmlResult?.QBXML?.QBXMLMsgsRs
+        console.log(qbxmlResult?.QBXML?.QBXMLMsgsRs);
+        const allCustumersData = qbxmlResult?.QBXML?.QBXMLMsgsRs.CustomerQueryRs[1].CustomerRet
+        if(allCustumersData){
+            processCustomerData(allCustumersData)
+        }
         sendDataToLambda(recievedData,password)
             // if(Array.isArray(recievedData)){
             //     const data = Object.assign({}, recievedData.map(item => item))
@@ -194,3 +204,6 @@ const sendRequestsToQuickBook =(req, res) => {
 // Function to parse the nesting of the Object 
 
 export default sendRequestsToQuickBook
+export {
+    isAWSResquestAvailable
+}

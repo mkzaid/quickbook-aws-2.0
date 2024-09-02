@@ -5,38 +5,36 @@ import { ModCustumerQuerryGenerator } from "../Querries/ModCustumer.js"
 import { ModInventoryItemsQuerryGenerator } from "../Querries/ModInventoryItem.js"
 import { ModInvoiceQuerryGenerator } from "../Querries/ModInvoice.js"
 import { GeneralQuerryGenerator } from "../Querries/GeneralQuerry.js"
-import { querryGenerator } from "../utils/querry.js"
+import { isAWSResquestAvailable } from "./quickbook.controllers.js"
 
 
-let custumQuerryFlag = false
-let xmlQuery =``
+let xmlQuery =''
 const awsdata = (req,res)=>{
-  
-    custumQuerryFlag = true
+  xmlQuery =GeneralQuerryGenerator()
+
+  if(req.body.QuerryType) isAWSResquestAvailable(true)
   let QuerryType = req.body.QuerryType
   if(QuerryType=='AddCustumer'){
-    xmlQuery = AddCustumerQuerryGenerator(req.body)
+    xmlQuery += AddCustumerQuerryGenerator(req.body)
   }
   else if (QuerryType=='ModCustumer'){
-    xmlQuery = ModCustumerQuerryGenerator(req.body)
+    xmlQuery += ModCustumerQuerryGenerator(req.body)
   }
   else if (QuerryType=='AddInvoice'){
-    xmlQuery = AddInvoiceQuerryGenerator(req.body)
+    xmlQuery += AddInvoiceQuerryGenerator(req.body)
   }
   else if (QuerryType=='ModInvoice'){
-    xmlQuery = ModInvoiceQuerryGenerator(req.body)
+    xmlQuery += ModInvoiceQuerryGenerator(req.body)
   }
   else if (QuerryType=='AddInventory'){
-    xmlQuery = AddNewInventoryQuerryGenerator(req.body)
+    xmlQuery += AddNewInventoryQuerryGenerator(req.body)
   }
   else if (QuerryType=='ModInventory'){
-    xmlQuery = ModInventoryItemsQuerryGenerator(req.body)
-  }
-  else{
-    xmlQuery=GeneralQuerryGenerator()
+    xmlQuery += ModInventoryItemsQuerryGenerator(req.body)
   }
   res.status(200).send({ success: true, xml: JSON.stringify(xmlQuery) });
 }
+
 
 const isQuerryUpdated = (value)=>{
     if(value) custumQuerryFlag = false
@@ -45,6 +43,5 @@ const isQuerryUpdated = (value)=>{
 export {
     awsdata, 
     xmlQuery as custumQuerry,
-    custumQuerryFlag,
     isQuerryUpdated
 }
